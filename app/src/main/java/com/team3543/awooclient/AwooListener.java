@@ -166,6 +166,12 @@ class GenericSocketHandlerThread implements Runnable
                             bw.flush();
                             socket.close();
                         }
+                        else
+                        {
+                            DataStore.text = receiveMessage;
+                            bw.write("SUCCESS\n");
+                            bw.flush();
+                        }
                     }
                 }
                 catch (Exception e)
