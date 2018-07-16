@@ -55,18 +55,57 @@ public class AwooListener
 
     public void run()
     {
+        new Thread(new Runnable()
+        {
+            public void run()
+            {
+                loopMethod();
+            }
+        }
+        ).start();
+    }
+
+    public void loopMethod()
+    {
         try
         {
             if (runAsServer)
             {
                 ssock = new ServerSocket(portNum);
+                while(!Thread.interrupted())
+                {
+                    if(ssock.isClosed())
+                    {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+
+                    try
+                    {
+                        sock = ssock.accept();
+                    }
+                    catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+
+                    GenericSocketHandlerThread gsht = new GenericSocketHandlerThread(sock);
+                    gsht.run();
+                }
             }
             else
             {
-                sock = new Socket(IPAddr, portNum);
+                while(!Thread.interrupted())
+                {
+                    sock = new Socket(IPAddr, portNum);
+                    if (sock.isClosed())
+                    {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                    new GenericSocketHandlerThread(sock).run();
+                }
             }
-            hThread = runAsServer ? new Thread(new AwooServerHandlerThread((ssock))) : new Thread(new AwooClientHandlerThread((sock)));
-            hThread.start();
         }
         catch (IOException ioe)
         {
@@ -100,102 +139,6 @@ public class AwooListener
             e.printStackTrace();
         }
     }
-}
-
-@SuppressWarnings("all")
-class AwooClientHandlerThread implements Runnable
-{
-    private Socket sock;
-
-    public AwooClientHandlerThread(Socket sock)
-    {
-        this.sock = sock;
-    }
-
-    public void run()
-    {
-        while(!Thread.interrupted())
-        {
-            if (sock.isClosed())
-            {
-                Thread.currentThread().interrupt();
-                return;
-            }
-            new GenericSocketHandlerThread(sock).run();
-        }
-    }
-}
-
-@SuppressWarnings("all")
-class AwooServerHandlerThread implements Runnable
-{
-    private ServerSocket ssock;
-
-    public AwooServerHandlerThread(ServerSocket ssock)
-    {
-        this.ssock = ssock;
-    }
-
-    public void run()
-    {
-        while(!Thread.interrupted())
-        {
-            Log.d("AwooListener", "GenericSocketHandlerThread started. ");
-            Socket sock = null;
-
-            if(ssock.isClosed())
-            {
-                Thread.currentThread().interrupt();
-                break;
-            }
-
-            try
-            {
-                sock = ssock.accept();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-
-            try
-            {
-                Log.d("AwooListener", "GenericSocketHandlerThread sock launched. " + sock.getRemoteSocketAddress().toString());
-            }
-            catch (NullPointerException e)
-            {
-                Thread.currentThread().interrupt();
-                break;
-            }
-
-            final Socket finalSock = sock;
-            Thread thread = new Thread()
-            {
-                @Override
-                public void run()
-                {
-                    while(!Thread.currentThread().interrupted() || !finalSock.isClosed())
-                    {
-                        if(ssock != null)
-                        {
-                            if(ssock.isClosed())
-                            {
-                                return;
-                            }
-                        }
-                        if(finalSock.isClosed())
-                        {
-                            return;
-                        }
-                        GenericSocketHandlerThread gsht = new GenericSocketHandlerThread(finalSock, ssock);
-                        gsht.run();
-                    }
-                }
-            };
-            thread.start();
-        }
-    }
-
 }
 
 @SuppressWarnings("all")
@@ -265,11 +208,13 @@ class GenericSocketHandlerThread implements Runnable
                 }
                 catch (Exception e)
                 {
+                    e.printStackTrace();
                 }
             }
         }
         catch (IOException ioe)
         {
+            ioe.printStackTrace();
         }
 
     }
