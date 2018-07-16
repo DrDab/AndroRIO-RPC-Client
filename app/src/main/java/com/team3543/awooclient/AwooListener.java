@@ -111,7 +111,7 @@ class AwooServerHandlerThread implements Runnable
 
     public void run()
     {
-        for(;;)
+        while(!Thread.interrupted())
         {
             Log.d("AwooListener", "GenericSocketHandlerThread started. ");
             Socket sock = null;
@@ -124,7 +124,21 @@ class AwooServerHandlerThread implements Runnable
                 e.printStackTrace();
             }
             Log.d("AwooListener", "GenericSocketHandlerThread sock launched. " + sock.getRemoteSocketAddress().toString());
-            new Thread(new GenericSocketHandlerThread(sock)).start();
+            // new Thread(new GenericSocketHandlerThread(sock)).start();
+            final Socket finalSock = sock;
+            Thread thread = new Thread()
+            {
+                @Override
+                public void run()
+                {
+                    while(!Thread.interrupted() || !finalSock.isClosed())
+                    {
+                        GenericSocketHandlerThread gsht = new GenericSocketHandlerThread(finalSock);
+                        gsht.run();
+                    }
+                }
+            };
+            thread.start();
         }
     }
 
@@ -145,11 +159,16 @@ class GenericSocketHandlerThread implements Runnable
     {
         try
         {
+            if(socket.isClosed())
+            {
+                Thread.currentThread().interrupt();
+                return;
+            }
             String receiveMessage;
             bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             InputStream istream = socket.getInputStream();
             BufferedReader receiveRead = new BufferedReader(new InputStreamReader(istream));
-            for(;;)
+            while(!Thread.interrupted())
             {
                 try
                 {
