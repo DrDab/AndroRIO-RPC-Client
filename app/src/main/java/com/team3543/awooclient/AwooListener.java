@@ -47,13 +47,10 @@ public class AwooListener
 
     public void setRunAsServer(boolean runAsServer)
     {
-        if (this.runAsServer != runAsServer)
-        {
-            this.runAsServer = runAsServer;
-            hThread.stop();
-            hThread = runAsServer ? new Thread(new AwooServerHandlerThread((ssock))) : new Thread(new AwooClientHandlerThread((sock)));
-            hThread.start();
-        }
+        this.runAsServer = runAsServer;
+        hThread.currentThread().interrupt();
+        hThread = null;
+        run();
     }
 
     public void run()
@@ -82,7 +79,10 @@ public class AwooListener
         hThread.currentThread().interrupt();
         try
         {
-            sock.close();
+            if(sock != null)
+            {
+                sock.close();
+            }
         }
         catch (Exception e)
         {
@@ -90,7 +90,10 @@ public class AwooListener
         }
         try
         {
-            ssock.close();
+            if(ssock != null)
+            {
+                ssock.close();
+            }
         }
         catch (Exception e)
         {
@@ -180,6 +183,10 @@ class AwooServerHandlerThread implements Runnable
                                 return;
                             }
                         }
+                        if(finalSock.isClosed())
+                        {
+                            return;
+                        }
                         GenericSocketHandlerThread gsht = new GenericSocketHandlerThread(finalSock, ssock);
                         gsht.run();
                     }
@@ -214,11 +221,6 @@ class GenericSocketHandlerThread implements Runnable
     {
         try
         {
-            if(socket.isClosed())
-            {
-                Thread.currentThread().interrupt();
-                return;
-            }
             String receiveMessage;
             bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             InputStream istream = socket.getInputStream();
@@ -263,13 +265,11 @@ class GenericSocketHandlerThread implements Runnable
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
                 }
             }
         }
         catch (IOException ioe)
         {
-            ioe.printStackTrace();
         }
 
     }
