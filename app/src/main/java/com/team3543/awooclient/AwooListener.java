@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 @SuppressWarnings("all")
 public class AwooListener
@@ -79,7 +80,23 @@ public class AwooListener
 
     public void killServer()
     {
-        hThread.stop();
+        hThread.currentThread().interrupt();
+        try
+        {
+            sock.close();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        try
+        {
+            ssock.close();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 }
 
@@ -95,7 +112,15 @@ class AwooClientHandlerThread implements Runnable
 
     public void run()
     {
-        new GenericSocketHandlerThread(sock).run();
+        while(!Thread.interrupted())
+        {
+            if (sock.isClosed())
+            {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            new GenericSocketHandlerThread(sock).run();
+        }
     }
 }
 
@@ -115,6 +140,11 @@ class AwooServerHandlerThread implements Runnable
         {
             Log.d("AwooListener", "GenericSocketHandlerThread started. ");
             Socket sock = null;
+            if(ssock.isClosed())
+            {
+                Thread.currentThread().interrupt();
+                break;
+            }
             try
             {
                 sock = ssock.accept();
@@ -123,7 +153,15 @@ class AwooServerHandlerThread implements Runnable
             {
                 e.printStackTrace();
             }
-            Log.d("AwooListener", "GenericSocketHandlerThread sock launched. " + sock.getRemoteSocketAddress().toString());
+            try
+            {
+                Log.d("AwooListener", "GenericSocketHandlerThread sock launched. " + sock.getRemoteSocketAddress().toString());
+            }
+            catch (NullPointerException e)
+            {
+                Thread.currentThread().interrupt();
+                break;
+            }
             // new Thread(new GenericSocketHandlerThread(sock)).start();
             final Socket finalSock = sock;
             Thread thread = new Thread()
@@ -131,9 +169,16 @@ class AwooServerHandlerThread implements Runnable
                 @Override
                 public void run()
                 {
-                    while(!Thread.interrupted() || !finalSock.isClosed())
+                    while(!Thread.currentThread().interrupted() || !finalSock.isClosed())
                     {
-                        GenericSocketHandlerThread gsht = new GenericSocketHandlerThread(finalSock);
+                        if(ssock != null)
+                        {
+                            if(ssock.isClosed())
+                            {
+                                return;
+                            }
+                        }
+                        GenericSocketHandlerThread gsht = new GenericSocketHandlerThread(finalSock, ssock);
                         gsht.run();
                     }
                 }
@@ -150,32 +195,47 @@ class GenericSocketHandlerThread implements Runnable
     private Socket socket;
     private BufferedWriter bw;
 
+    private ServerSocket serverSocket = null;
+
     public GenericSocketHandlerThread(Socket socket)
     {
         this.socket = socket;
+    }
+
+    public GenericSocketHandlerThread(Socket socket, ServerSocket serverSocket)
+    {
+        this.socket = socket;
+        this.serverSocket = serverSocket;
     }
 
     public void run()
     {
         try
         {
-            if(socket.isClosed())
-            {
-                Thread.currentThread().interrupt();
-                return;
-            }
             String receiveMessage;
             bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             InputStream istream = socket.getInputStream();
             BufferedReader receiveRead = new BufferedReader(new InputStreamReader(istream));
             while(!Thread.interrupted())
             {
+                if (socket.isClosed())
+                {
+                    bw.close();
+                    Thread.currentThread().interrupt();
+                }
+
+                if(serverSocket != null)
+                {
+                    if (serverSocket.isClosed())
+                    {
+                        bw.close();
+                        socket.close();
+                        Thread.currentThread().interrupt();
+                    }
+                }
+
                 try
                 {
-                    if (socket.isClosed())
-                    {
-                        break;
-                    }
                     receiveMessage = receiveRead.readLine();
                     if(receiveMessage != null)
                     {
