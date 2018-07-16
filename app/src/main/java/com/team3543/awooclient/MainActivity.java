@@ -49,7 +49,5 @@ public class MainActivity extends AppCompatActivity
 
         furry = new AwooListener("127.0.0.1", 13970, true);
         furry.run();
-        furry.killServer();
-        furry.setRunAsServer(true);
     }
 }
