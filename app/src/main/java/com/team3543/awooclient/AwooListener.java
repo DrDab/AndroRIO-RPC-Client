@@ -10,7 +10,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 
 @SuppressWarnings("all")
 public class AwooListener
@@ -140,11 +139,13 @@ class AwooServerHandlerThread implements Runnable
         {
             Log.d("AwooListener", "GenericSocketHandlerThread started. ");
             Socket sock = null;
+
             if(ssock.isClosed())
             {
                 Thread.currentThread().interrupt();
                 break;
             }
+
             try
             {
                 sock = ssock.accept();
@@ -153,6 +154,7 @@ class AwooServerHandlerThread implements Runnable
             {
                 e.printStackTrace();
             }
+
             try
             {
                 Log.d("AwooListener", "GenericSocketHandlerThread sock launched. " + sock.getRemoteSocketAddress().toString());
@@ -162,7 +164,7 @@ class AwooServerHandlerThread implements Runnable
                 Thread.currentThread().interrupt();
                 break;
             }
-            // new Thread(new GenericSocketHandlerThread(sock)).start();
+
             final Socket finalSock = sock;
             Thread thread = new Thread()
             {
@@ -221,6 +223,7 @@ class GenericSocketHandlerThread implements Runnable
                 if (socket.isClosed())
                 {
                     bw.close();
+                    socket.close();
                     Thread.currentThread().interrupt();
                 }
 
@@ -239,7 +242,7 @@ class GenericSocketHandlerThread implements Runnable
                     receiveMessage = receiveRead.readLine();
                     if(receiveMessage != null)
                     {
-                        if(receiveMessage.matches("HELLO"))
+                        if(receiveMessage.matches("BYE"))
                         {
                             bw.write("GOODBYE\n");
                             bw.flush();
