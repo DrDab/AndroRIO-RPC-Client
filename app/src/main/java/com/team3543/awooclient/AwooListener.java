@@ -214,6 +214,11 @@ class GenericSocketHandlerThread implements Runnable
     {
         try
         {
+            if(socket.isClosed())
+            {
+                Thread.currentThread().interrupt();
+                return;
+            }
             String receiveMessage;
             bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             InputStream istream = socket.getInputStream();
