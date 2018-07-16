@@ -1,7 +1,5 @@
 package com.team3543.awooclient;
 
-import android.util.Log;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -55,14 +53,15 @@ public class AwooListener
 
     public void run()
     {
-        new Thread(new Runnable()
+        hThread = new Thread(new Runnable()
         {
             public void run()
             {
                 loopMethod();
             }
         }
-        ).start();
+        );
+        hThread.start();
     }
 
     public void loopMethod()
@@ -89,8 +88,7 @@ public class AwooListener
                         e.printStackTrace();
                     }
 
-                    GenericSocketHandlerThread gsht = new GenericSocketHandlerThread(sock);
-                    gsht.run();
+                    new Thread(new GenericSocketHandlerThread(sock)).start();
                 }
             }
             else
