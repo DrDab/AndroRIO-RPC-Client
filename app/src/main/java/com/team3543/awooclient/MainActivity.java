@@ -37,41 +37,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         DataStore.text = ("IP: " + Utils.getIPAddress(true) + ":" + PORT);
         DataStore.prevText = ("IP: " + Utils.getIPAddress(true) + ":" + PORT);
 
-        Thread thread = new Thread()
-        {
-            @Override
-            public void run()
-            {
-                for(;;)
-                {
-                    try
-                    {
-                        Thread.sleep(50);
-                    }
-                    catch (InterruptedException e)
-                    {
-                        e.printStackTrace();
-                    }
-                    runOnUiThread(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            tv.setText(DataStore.text);
-                            if(!DataStore.text.matches(DataStore.prevText))
-                            {
-                                Log.d("Updator", "Text Updated");
-                                DataStore.prevText = DataStore.text;
-                                tts.speak(DataStore.text, TextToSpeech.QUEUE_FLUSH, null);
-                            }
-                        }
-                    });
-                }
-            }
-        };
-
-        thread.start();
-
         furry = new AwooListener("127.0.0.1", PORT, true);
         furry.run();
 

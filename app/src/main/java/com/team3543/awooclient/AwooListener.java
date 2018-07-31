@@ -184,7 +184,8 @@ class GenericSocketHandlerThread implements Runnable
                     {
                         receiveMessage += tmpLn + "\n";
                     }
-                    // String response = rpcServer.handle(request, teamService);
+                    String response = rpcServer.handle(receiveMessage, TestRPCClass.class);
+                    bw.write(response + "\n");
                     receiveMessage = "";
                 }
                 catch (Exception e)
