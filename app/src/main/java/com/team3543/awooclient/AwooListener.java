@@ -1,5 +1,7 @@
 package com.team3543.awooclient;
 
+import com.github.arteam.simplejsonrpc.server.JsonRpcServer;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -21,11 +23,14 @@ public class AwooListener
 
     private Thread hThread;
 
+    private JsonRpcServer rpcServer;
+
     public AwooListener(String IPAddr, int portNum, boolean runAsServer)
     {
         this.IPAddr = IPAddr;
         this.portNum = portNum;
         this.runAsServer = runAsServer;
+        rpcServer = new JsonRpcServer();
     }
 
     public String getIPAddr()
@@ -88,7 +93,7 @@ public class AwooListener
                         e.printStackTrace();
                     }
 
-                    new Thread(new GenericSocketHandlerThread(sock)).start();
+                    new Thread(new GenericSocketHandlerThread(sock, rpcServer)).start();
                 }
             }
             else
@@ -101,7 +106,7 @@ public class AwooListener
                         Thread.currentThread().interrupt();
                         return;
                     }
-                    new GenericSocketHandlerThread(sock).run();
+                    new GenericSocketHandlerThread(sock, rpcServer).run();
                 }
             }
         }
@@ -147,22 +152,19 @@ class GenericSocketHandlerThread implements Runnable
 
     private ServerSocket serverSocket = null;
 
-    public GenericSocketHandlerThread(Socket socket)
-    {
-        this.socket = socket;
-    }
+    private JsonRpcServer rpcServer;
 
-    public GenericSocketHandlerThread(Socket socket, ServerSocket serverSocket)
+    public GenericSocketHandlerThread(Socket socket, JsonRpcServer rpcServer)
     {
         this.socket = socket;
-        this.serverSocket = serverSocket;
+        this.rpcServer = rpcServer;
     }
 
     public void run()
     {
         try
         {
-            String receiveMessage;
+            String receiveMessage = "";
             bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             InputStream istream = socket.getInputStream();
             BufferedReader receiveRead = new BufferedReader(new InputStreamReader(istream));
@@ -175,34 +177,15 @@ class GenericSocketHandlerThread implements Runnable
                     Thread.currentThread().interrupt();
                 }
 
-                if(serverSocket != null)
-                {
-                    if (serverSocket.isClosed())
-                    {
-                        bw.close();
-                        socket.close();
-                        Thread.currentThread().interrupt();
-                    }
-                }
-
                 try
                 {
-                    receiveMessage = receiveRead.readLine();
-                    if(receiveMessage != null)
+                    String tmpLn = "";
+                    while ((tmpLn = receiveRead.readLine()) != null)
                     {
-                        if(receiveMessage.matches("BYE"))
-                        {
-                            bw.write("GOODBYE\n");
-                            bw.flush();
-                            socket.close();
-                        }
-                        else
-                        {
-                            DataStore.text = receiveMessage;
-                            bw.write("SUCCESS\n");
-                            bw.flush();
-                        }
+                        receiveMessage += tmpLn + "\n";
                     }
+                    // String response = rpcServer.handle(request, teamService);
+                    receiveMessage = "";
                 }
                 catch (Exception e)
                 {
