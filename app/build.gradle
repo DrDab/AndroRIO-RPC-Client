@@ -26,4 +26,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:0.5'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:2.2.2'
     compile 'com.github.arteam:simple-json-rpc-server:0.9'
+    compile group: 'joda-time', name: 'joda-time', version: '2.3'
+
+
 }

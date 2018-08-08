@@ -5,14 +5,16 @@ import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.arteam.simplejsonrpc.core.annotation.JsonRpcMethod;
-import com.github.arteam.simplejsonrpc.core.annotation.JsonRpcService;
 
-@JsonRpcService
 public class TestRPCClass
 {
     @JsonProperty
     private String firstName;
+
+    @JsonProperty
     private String lastName;
+
+    @JsonProperty
     private long timeInitialized = 0;
 
 
@@ -30,7 +32,6 @@ public class TestRPCClass
         this.lastName = lastName;
     }
 
-    @JsonRpcMethod
     public void initTime()
     {
         Date date = new Date();
@@ -38,7 +39,6 @@ public class TestRPCClass
     }
 
     @Override
-    @JsonRpcMethod
     public String toString()
     {
         return firstName + " " + lastName + " " + timeInitialized;

@@ -180,12 +180,14 @@ class GenericSocketHandlerThread implements Runnable
                 try
                 {
                     String tmpLn = "";
-                    while ((tmpLn = receiveRead.readLine()) != null)
+                    if ((tmpLn = receiveRead.readLine()) != null)
                     {
-                        receiveMessage += tmpLn + "\n";
+                        receiveMessage += tmpLn;
                     }
-                    String response = rpcServer.handle(receiveMessage, TestRPCClass.class);
+
+                    String response = rpcServer.handle(receiveMessage, TestRPCService.class);
                     bw.write(response + "\n");
+                    bw.flush();
                     receiveMessage = "";
                 }
                 catch (Exception e)
