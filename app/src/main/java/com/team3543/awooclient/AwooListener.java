@@ -1,5 +1,7 @@
 package com.team3543.awooclient;
 
+import android.util.Log;
+
 import com.github.arteam.simplejsonrpc.server.JsonRpcServer;
 
 import java.io.BufferedReader;
@@ -153,17 +155,20 @@ class GenericSocketHandlerThread implements Runnable
     private ServerSocket serverSocket = null;
 
     private JsonRpcServer rpcServer;
+    private TestRPCService testRPCService;
 
     public GenericSocketHandlerThread(Socket socket, JsonRpcServer rpcServer)
     {
         this.socket = socket;
         this.rpcServer = rpcServer;
+        testRPCService = new TestRPCService();
     }
 
     public void run()
     {
         try
         {
+            Log.d("AwooListener", "Listening to " + socket.getRemoteSocketAddress());
             String receiveMessage = "";
             bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             InputStream istream = socket.getInputStream();
@@ -179,16 +184,18 @@ class GenericSocketHandlerThread implements Runnable
 
                 try
                 {
+                    Log.d("AwooListener", "Waiting for message...");
                     String tmpLn = "";
                     if ((tmpLn = receiveRead.readLine()) != null)
                     {
-                        receiveMessage += tmpLn;
+                        Log.d("AwooListener", "RX: " + tmpLn);
+                        receiveMessage = (tmpLn + "\n");
                     }
 
-                    String response = rpcServer.handle(receiveMessage, TestRPCService.class);
+                    String response = rpcServer.handle(receiveMessage, testRPCService);
+                    Log.d("AwooListener", "TX: " + response);
                     bw.write(response + "\n");
                     bw.flush();
-                    receiveMessage = "";
                 }
                 catch (Exception e)
                 {

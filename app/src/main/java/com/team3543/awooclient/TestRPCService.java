@@ -6,7 +6,7 @@ import com.github.arteam.simplejsonrpc.core.annotation.JsonRpcService;
 @JsonRpcService
 public class TestRPCService
 {
-    @JsonRpcMethod
+    @JsonRpcMethod("getMajiraInstance")
     public TestRPCClass getMajiraInstance()
     {
         return new TestRPCClass("tail", "fuzzball");
